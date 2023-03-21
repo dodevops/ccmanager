@@ -1,0 +1,1 @@
+# ccmanager - CloudControl instance manager
