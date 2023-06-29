@@ -205,6 +205,9 @@ func NewMainModel(adapter adapters.BaseAdapter, basePath []string, items []list.
 	confirmList.DisableQuitKeybindings()
 	confirmList.SetFilteringEnabled(false)
 
+	textArea := textarea.New()
+	textArea.CharLimit = 0
+
 	return MainModel{
 		loadedItems: false,
 		Adapter:     adapter,
@@ -213,7 +216,7 @@ func NewMainModel(adapter adapters.BaseAdapter, basePath []string, items []list.
 		keys:        listKeys,
 		BasePath:    basePath,
 		Confirm:     confirmList,
-		LogViewer:   textarea.New(),
+		LogViewer:   textArea,
 	}
 }
 
