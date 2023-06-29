@@ -80,25 +80,13 @@ func LoadInstanceHandler(m MainModel, basePath string, name string) (MainModel, 
 	if r != nil {
 		ri := r.(RefreshableItem)
 		cmd := m.List.SetItem(ri.index, item)
-		if !item.State.Running || item.State.CCCStatus == adapters.CCCReady {
-			m.ItemsToRefresh = funk.Filter(m.ItemsToRefresh, func(e RefreshableItem) bool {
-				return e.index != ri.index
-			}).([]RefreshableItem)
-		}
 		if cmd != nil {
 			return m, cmd
 		}
 		return m, nil
 	}
 
-	itemIndex := len(m.List.Items())
-	if item.State.Running && item.State.CCCStatus != adapters.CCCReady {
-		m.ItemsToRefresh = append(m.ItemsToRefresh, RefreshableItem{
-			item:  item,
-			index: itemIndex,
-		})
-	}
-	m.List.InsertItem(itemIndex, item)
+	m.List.InsertItem(len(m.List.Items()), item)
 	return m, nil
 }
 
@@ -150,20 +138,9 @@ func OpenCCCHandler(m MainModel) (MainModel, tea.Cmd) {
 type RefreshTickMsg time.Time
 
 func RefreshTick() tea.Cmd {
-	return tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
+	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 		return RefreshTickMsg(t)
 	})
-}
-
-// The ReloadItemMsg places the given item in MainModel.ItemsToRefresh
-type ReloadItemMsg struct {
-	item InstanceItem
-}
-
-func ReloadItem(item InstanceItem) tea.Msg {
-	return ReloadItemMsg{
-		item: item,
-	}
 }
 
 // The ReloadItemsMsg triggers reloading all instances
@@ -171,6 +148,13 @@ type ReloadItemsMsg struct{}
 
 func ReloadItems() tea.Msg {
 	return ReloadItemsMsg{}
+}
+
+// RestartMsg triggers restarting an instance
+type RestartMsg struct{}
+
+func Restart() tea.Msg {
+	return RestartMsg{}
 }
 
 // The RunCloudControlMsg triggers running CloudControl
@@ -259,31 +243,16 @@ func Start() tea.Msg {
 // StartHandler uses adapters.BaseAdapter.StartCloudControl to start an instance
 func StartHandler(m MainModel) tea.Cmd {
 	item := m.List.SelectedItem().(InstanceItem)
-	return tea.Sequence(
-		DisableList,
-		tea.ClearScreen,
-		func() tea.Msg {
-			var cmds []tea.Cmd
-			if !funk.Contains(m.ItemsToRefresh, func(e RefreshableItem) bool {
-				return e.item.ID() == item.ID()
-			}) {
-				cmds = append(cmds, func() tea.Cmd {
-					return func() tea.Msg {
-						return ReloadItem(item)
-					}
-				}())
-			}
-			if err := m.Adapter.StartCloudControl(item.Path, item.Name); err != nil {
-				cmds = append(cmds, m.List.NewStatusMessage(internal.ErrorMessageStyle(fmt.Sprintf("Can not start CloudControl: %s", err.Error()))))
-			}
-			if cmds != nil {
-				return tea.Batch(cmds...)()
-			}
-			return nil
-		},
-		tea.ClearScreen,
-		EnableList,
-	)
+	return func() tea.Msg {
+		var cmds []tea.Cmd
+		if err := m.Adapter.StartCloudControl(item.Path, item.Name); err != nil {
+			cmds = append(cmds, m.List.NewStatusMessage(internal.ErrorMessageStyle(fmt.Sprintf("Can not start CloudControl: %s", err.Error()))))
+		}
+		if cmds != nil {
+			return tea.Batch(cmds...)()
+		}
+		return nil
+	}
 }
 
 // StopMsg is used to stop an instance.
@@ -296,31 +265,16 @@ func Stop() tea.Msg {
 // StopHandler uses adapters.BaseAdapter.StopCloudControl to stop an instance.
 func StopHandler(m MainModel) tea.Cmd {
 	item := m.List.SelectedItem().(InstanceItem)
-	return tea.Sequence(
-		DisableList,
-		tea.ClearScreen,
-		func() tea.Msg {
-			var cmds []tea.Cmd
-			if !funk.Contains(m.ItemsToRefresh, func(e RefreshableItem) bool {
-				return e.index == m.List.Index()
-			}) {
-				cmds = append(cmds, func(item InstanceItem) tea.Cmd {
-					return func() tea.Msg {
-						return ReloadItem(item)
-					}
-				}(item))
-			}
-			if err := m.Adapter.StopCloudControl(item.Path, item.Name, true); err != nil {
-				cmds = append(cmds, m.List.NewStatusMessage(internal.ErrorMessageStyle(fmt.Sprintf("Can not start CloudControl: %s", err.Error()))))
-			}
-			if cmds != nil {
-				return tea.Batch(cmds...)()
-			}
-			return nil
-		},
-		tea.ClearScreen,
-		EnableList,
-	)
+	return func() tea.Msg {
+		var cmds []tea.Cmd
+		if err := m.Adapter.StopCloudControl(item.Path, item.Name, true); err != nil {
+			cmds = append(cmds, m.List.NewStatusMessage(internal.ErrorMessageStyle(fmt.Sprintf("Can not start CloudControl: %s", err.Error()))))
+		}
+		if cmds != nil {
+			return tea.Batch(cmds...)()
+		}
+		return nil
+	}
 }
 
 // getSubFolders walks through the given BasePath and returns a list of directory entries which are also directories.
