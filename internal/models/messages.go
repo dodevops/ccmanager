@@ -79,11 +79,14 @@ func LoadInstanceHandler(m MainModel, basePath string, name string) (MainModel, 
 
 	if r != nil {
 		ri := r.(RefreshableItem)
-		m.List.SetItem(ri.index, item)
+		cmd := m.List.SetItem(ri.index, item)
 		if !item.State.Running || item.State.CCCStatus == adapters.CCCReady {
 			m.ItemsToRefresh = funk.Filter(m.ItemsToRefresh, func(e RefreshableItem) bool {
 				return e.index != ri.index
 			}).([]RefreshableItem)
+		}
+		if cmd != nil {
+			return m, cmd
 		}
 		return m, nil
 	}
@@ -262,7 +265,7 @@ func StartHandler(m MainModel) tea.Cmd {
 		func() tea.Msg {
 			var cmds []tea.Cmd
 			if !funk.Contains(m.ItemsToRefresh, func(e RefreshableItem) bool {
-				return e.index == m.List.Index()
+				return e.item.ID() == item.ID()
 			}) {
 				cmds = append(cmds, func() tea.Cmd {
 					return func() tea.Msg {

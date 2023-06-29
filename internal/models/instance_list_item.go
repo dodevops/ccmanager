@@ -22,6 +22,11 @@ type InstanceItem struct {
 
 var _ list.Item = InstanceItem{}
 
+// ID returns an identifier for the item consisting of the path and name
+func (i InstanceItem) ID() string {
+	return i.Path + i.Name
+}
+
 // Title shows the flavour and the name of the instance
 func (i InstanceItem) Title() string {
 	flavour := ""
