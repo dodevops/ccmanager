@@ -5,7 +5,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/thoas/go-funk"
 )
 
 // Update holds the main controlling code for the applcation.
@@ -72,15 +71,6 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case InstancesLoadedMsg:
 		m.loadedItems = true
 		return m, nil
-	case ReloadItemMsg:
-		i := funk.IndexOf(m.List.Items(), func(e list.Item) bool {
-			return e.(InstanceItem).Name == msg.item.Name && e.(InstanceItem).Path == msg.item.Path
-		})
-		m.ItemsToRefresh = append(m.ItemsToRefresh, RefreshableItem{
-			index: i,
-			item:  msg.item,
-		})
-		return m, nil
 	case ReloadItemsMsg:
 		for len(m.List.Items()) > 0 {
 			m.List.RemoveItem(0)
@@ -96,15 +86,24 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case RunCloudControlMsg:
 		return m, RunCloudControlHandler(m)
 	case StartMsg:
-		return m, StartHandler(m)
+		return m, tea.Sequence(DisableList, tea.ClearScreen, StartHandler(m), tea.ClearScreen, EnableList)
 	case StopMsg:
-		return m, StopHandler(m)
+		return m, tea.Sequence(DisableList, tea.ClearScreen, StopHandler(m), tea.ClearScreen, EnableList)
+	case RestartMsg:
+		return m, tea.Sequence(DisableList, tea.ClearScreen, StopHandler(m), StartHandler(m), tea.ClearScreen, EnableList)
 	case ShowLogMsg:
 		return ShowLogHandler(m)
 
 	case RefreshTickMsg:
 		if m.loadedItems {
 			var refreshCmds []tea.Cmd
+			m.ItemsToRefresh = nil
+			for index, item := range m.List.Items() {
+				m.ItemsToRefresh = append(m.ItemsToRefresh, RefreshableItem{
+					index,
+					item.(InstanceItem),
+				})
+			}
 			for _, itemToRefresh := range m.ItemsToRefresh {
 				refreshCmds = append(refreshCmds, func(i RefreshableItem) tea.Cmd {
 					return func() tea.Msg {
@@ -199,7 +198,7 @@ func (m MainModel) keyHandler(msg tea.KeyMsg) (MainModel, tea.Cmd) {
 	case key.Matches(msg, m.keys.Start):
 		return m, Start
 	case key.Matches(msg, m.keys.Restart):
-		return m, tea.Sequence(Stop, Start)
+		return m, Restart
 	case key.Matches(msg, m.keys.ShowLog):
 		return m, ShowLog
 	}
