@@ -55,8 +55,8 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := internal.AppStyle.GetFrameSize()
 		m.List.SetSize(msg.Width-h, msg.Height-v)
-		m.LogViewer.SetWidth(msg.Width)
-		m.LogViewer.SetHeight(msg.Height - 2)
+		m.LogViewer.Width = msg.Width
+		m.LogViewer.Height = msg.Height - 2
 		m.Width = msg.Width
 		m.Height = msg.Height
 		m.List.Styles.Title.Width(m.Width - h - 4)
