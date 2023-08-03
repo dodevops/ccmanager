@@ -61,13 +61,24 @@ func (d DockerAdapter) GetContainerStatus(basePath string, name string) (CloudCo
 			cs = CCCExited
 			err = fmt.Errorf("container status: %s (Exit Code %d) %s", i.State.Status, i.State.ExitCode, i.State.Error)
 		}
+		var portMappings []PortMap
+
+		for port, bindings := range i.NetworkSettings.Ports {
+			if port != "8080/tcp" {
+				portMappings = append(portMappings, PortMap{
+					ContainerPort: port.Port(),
+					HostPort:      bindings[0].HostPort,
+				})
+			}
+		}
 		return CloudControlStatus{
-			Error:     err,
-			Running:   i.State != nil && i.State.Running,
-			Image:     strings.Split(i.Config.Image, ":")[0],
-			Tag:       strings.Split(i.Config.Image, ":")[1],
-			CCCPort:   p,
-			CCCStatus: cs,
+			Error:        err,
+			Running:      i.State != nil && i.State.Running,
+			Image:        strings.Split(i.Config.Image, ":")[0],
+			Tag:          strings.Split(i.Config.Image, ":")[1],
+			CCCPort:      p,
+			CCCStatus:    cs,
+			PortMappings: portMappings,
 		}, nil
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"time"
@@ -137,8 +137,8 @@ type MainModel struct {
 	ItemsToRefresh []RefreshableItem
 	// ShowLog tells whether the log screen is shown
 	ShowLog bool
-	// LogViewer is the textarea.Model used for log screens
-	LogViewer textarea.Model
+	// LogViewer is the viewport.Model used for log screens
+	LogViewer viewport.Model
 }
 
 // NewMainModel creates a new model for the main instance list view
@@ -205,8 +205,7 @@ func NewMainModel(adapter adapters.BaseAdapter, basePath []string, items []list.
 	confirmList.DisableQuitKeybindings()
 	confirmList.SetFilteringEnabled(false)
 
-	textArea := textarea.New()
-	textArea.CharLimit = 0
+	textArea := viewport.New(10, 10)
 
 	return MainModel{
 		loadedItems: false,

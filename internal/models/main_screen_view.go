@@ -4,17 +4,27 @@ import (
 	"ccmanager/internal"
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
+	"strings"
 )
 
 // View renders the screen dependending on the model
 func (m MainModel) View() string {
 	if m.loadedItems {
 		if m.ShowInfo {
+			var portMappingsString []string
+			for _, mapping := range m.InfoItem.State.PortMappings {
+				portMappingsString = append(
+					portMappingsString,
+					fmt.Sprintf("  %s => http://127.0.0.1:%s", mapping.ContainerPort, mapping.HostPort),
+				)
+			}
 			content := internal.InfoBoxStyle.Render(fmt.Sprintf(
-				"Path: %s\nState: %s\nImage: %s",
+				"Path: %s\nState: %s\nImage: %s\nCCC port: http://0.0.0.0:%s\nPort mappings:\n%s",
 				m.InfoItem.Path,
 				m.InfoItem.StateDescription(),
 				m.InfoItem.State.Image,
+				m.InfoItem.State.CCCPort,
+				strings.Join(portMappingsString, "\n"),
 			))
 			infoBox := lipgloss.JoinVertical(.5,
 				internal.TitleStyle.
