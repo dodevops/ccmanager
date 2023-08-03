@@ -220,16 +220,15 @@ func ShowLogHandler(m MainModel) (MainModel, tea.Cmd) {
 	item := m.List.SelectedItem().(InstanceItem)
 
 	if l, err := m.Adapter.GetLogs(item.Path, item.Name); err != nil {
-		m.LogViewer.SetValue(fmt.Sprintf("Error getting logs: %s", err.Error()))
+		m.LogViewer.SetContent(fmt.Sprintf("Error getting logs: %s", err.Error()))
 	} else {
-		m.LogViewer.SetValue(l)
+		m.LogViewer.SetContent(l)
 	}
 
 	m.ShowLog = true
 	return m, tea.Sequence(
 		tea.ClearScreen,
 		DisableList,
-		m.LogViewer.Focus(),
 	)
 }
 

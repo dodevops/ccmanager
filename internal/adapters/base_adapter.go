@@ -5,6 +5,13 @@ import (
 	"io"
 )
 
+type PortMap struct {
+	// ContainerPort holds the port inside the container
+	ContainerPort string
+	// HostPort holds the mapped port accessible from the host
+	HostPort string
+}
+
 // CloudControlStatus holds various information about a cloudcontrol instance
 type CloudControlStatus struct {
 	// Error holds a possible error that has occured when gathering information about or running this instance
@@ -19,6 +26,8 @@ type CloudControlStatus struct {
 	CCCPort string
 	// CCCStatus holds the status the CCC returns
 	CCCStatus CCCStatus
+	// PortMappings holds additional portmappings (aside from the CCCport)
+	PortMappings []PortMap
 }
 
 // CCCStatus holds the instance status as returned by the CCC
