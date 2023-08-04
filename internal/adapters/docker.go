@@ -64,7 +64,7 @@ func (d DockerAdapter) GetContainerStatus(basePath string, name string) (CloudCo
 		var portMappings []PortMap
 
 		for port, bindings := range i.NetworkSettings.Ports {
-			if port != "8080/tcp" {
+			if port != "8080/tcp" && len(bindings) > 0 {
 				portMappings = append(portMappings, PortMap{
 					ContainerPort: port.Port(),
 					HostPort:      bindings[0].HostPort,
