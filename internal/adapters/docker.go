@@ -14,7 +14,7 @@ import (
 	"github.com/docker/compose/v2/pkg/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 	"github.com/moby/term"
 	"io"
 	"net"
