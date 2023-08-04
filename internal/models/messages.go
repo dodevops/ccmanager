@@ -6,7 +6,7 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/pkg/browser"
-	"github.com/thoas/go-funk"
+	funk "github.com/thoas/go-funk"
 	"log"
 	"os"
 	"strconv"

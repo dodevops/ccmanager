@@ -14,7 +14,7 @@ import (
 	"github.com/docker/compose/v2/pkg/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 	"github.com/moby/term"
 	"io"
 	"net"
@@ -64,7 +64,7 @@ func (d DockerAdapter) GetContainerStatus(basePath string, name string) (CloudCo
 		var portMappings []PortMap
 
 		for port, bindings := range i.NetworkSettings.Ports {
-			if port != "8080/tcp" {
+			if port != "8080/tcp" && len(bindings) > 0 {
 				portMappings = append(portMappings, PortMap{
 					ContainerPort: port.Port(),
 					HostPort:      bindings[0].HostPort,
