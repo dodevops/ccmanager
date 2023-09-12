@@ -34,7 +34,7 @@ type DockerAdapter struct {
 	composeBackend *api.Service
 }
 
-func (d DockerAdapter) GetContainerStatus(basePath string, name string) (CloudControlStatus, error) {
+func (d *DockerAdapter) GetContainerStatus(basePath string, name string) (CloudControlStatus, error) {
 	containerName := fmt.Sprintf("%s_cli_1", name)
 	c := d.getClient()
 	notFound := regexp.MustCompile("No such container")
@@ -83,7 +83,7 @@ func (d DockerAdapter) GetContainerStatus(basePath string, name string) (CloudCo
 	}
 }
 
-func (d DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint, consoleHeight uint) (*ContainerExec, error) {
+func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint, consoleHeight uint) (*ContainerExec, error) {
 	containerName := fmt.Sprintf("%s_cli_1", name)
 	consoleSize := [2]uint{consoleHeight, consoleWidth}
 	return &ContainerExec{
@@ -213,7 +213,7 @@ func (d DockerAdapter) StartCloudControl(basePath string, name string) error {
 func (d DockerAdapter) StopCloudControl(basePath string, name string, _ bool) error {
 	return d.down(basePath, name)
 }
-func (d DockerAdapter) GetLogs(basePath string, name string) (string, error) {
+func (d *DockerAdapter) GetLogs(basePath string, name string) (string, error) {
 	var project *composeTypes.Project
 
 	if p, err := d.getProject(basePath, name); err != nil {
@@ -233,7 +233,7 @@ func (d DockerAdapter) GetLogs(basePath string, name string) (string, error) {
 }
 
 // getClient returns an already created connection to the docker client or creates one
-func (d DockerAdapter) getClient() client.Client {
+func (d *DockerAdapter) getClient() client.Client {
 	if d.dockerCLI == nil {
 		if dockerCli, err := client.NewClientWithOpts(client.FromEnv); err != nil {
 			panic(fmt.Sprintf("Can not connect to Docker API: %s", err.Error()))
@@ -247,7 +247,7 @@ func (d DockerAdapter) getClient() client.Client {
 
 // getComposeBackend retuns an already open connection to the docker compose service or
 // creates one
-func (d DockerAdapter) getComposeBackend() api.Service {
+func (d *DockerAdapter) getComposeBackend() api.Service {
 	if d.composeBackend == nil {
 		cl := d.getClient()
 		// ensure old docker-compose compatibility
@@ -272,6 +272,7 @@ func (d DockerAdapter) getCCCStatus(port string) (CCCStatus, error) {
 		Status string
 	}
 	c := resty.New()
+	c.SetCloseConnection(true)
 	statusResult := cccBackendStatus{}
 	if resp, err := c.R().SetResult(&statusResult).Get(fmt.Sprintf("http://localhost:%s/api/status", port)); err != nil {
 		return CCCErr, err
@@ -331,7 +332,7 @@ func (d DockerAdapter) getProject(basePath string, name string) (*composeTypes.P
 	}
 
 	if yamlFile == "" {
-		err := fmt.Errorf("can't file docker-compose file for %s at path %s", name, basePath)
+		err := fmt.Errorf("can't find docker-compose file for %s at path %s", name, basePath)
 		return nil, err
 	}
 
@@ -362,7 +363,7 @@ func (d DockerAdapter) getProject(basePath string, name string) (*composeTypes.P
 }
 
 // up calls docker compose up on an instance
-func (d DockerAdapter) up(path string, name string, pull bool) error {
+func (d *DockerAdapter) up(path string, name string, pull bool) error {
 	var project *composeTypes.Project
 	if p, err := d.getProject(path, name); err != nil {
 		return err
@@ -383,7 +384,7 @@ func (d DockerAdapter) up(path string, name string, pull bool) error {
 }
 
 // down calls docker compose down on an instance
-func (d DockerAdapter) down(path string, name string) error {
+func (d *DockerAdapter) down(path string, name string) error {
 	var project *composeTypes.Project
 	if p, err := d.getProject(path, name); err != nil {
 		return err
