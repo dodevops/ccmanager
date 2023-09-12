@@ -51,7 +51,6 @@ jobs:
           - darwin
         goarch:
           - amd64
-          - arm64
 
     env:
       GOOS: ${{ matrix.goos }}
