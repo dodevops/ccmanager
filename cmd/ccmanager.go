@@ -39,7 +39,7 @@ func main() {
 
 	d := adapters.DockerAdapter{}
 
-	program := tea.NewProgram(models.NewMainModel(d, *basePath, items))
+	program := tea.NewProgram(models.NewMainModel(&d, *basePath, items))
 	if _, err := program.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
