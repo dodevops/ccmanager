@@ -4,7 +4,7 @@ If you're using [CloudControl](https://cloudcontrol.dodevops.io) to manage the i
 switching between different projects can be cumbersome.
 
 CCmanager is a TUI for managing multiple CloudControl instances. Currently, it expects that all instances are managed
-using docker-compose in one or multiple subdirectories.
+using `docker compose` in one or multiple subdirectories.
 
 [![asciicast](https://asciinema.org/a/1sNBj2v0xJLAD7H4mqK1hGHEt.svg)](https://asciinema.org/a/1sNBj2v0xJLAD7H4mqK1hGHEt)
 
