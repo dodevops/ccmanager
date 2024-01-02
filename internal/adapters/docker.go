@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var _ BaseAdapter = &DockerAdapter{}
@@ -187,6 +188,7 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 					return fmt.Errorf("error running in container %s: %w", containerName, err)
 				} else {
 					if execInspect.Running {
+						time.Sleep(2 * time.Second)
 						continue
 					}
 					print("CloudControl closed. Press any key to proceed.")
