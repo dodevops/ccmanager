@@ -44,13 +44,14 @@ jobs:
 
   # Separate mac build to support fsevents dependency
   buildmac:
-    runs-on: macos-latest
+    runs-on: macos-14 # beta arm runner
     strategy:
       matrix:
         goos:
           - darwin
         goarch:
           - amd64
+          - arm64
 
     env:
       GOOS: ${{ matrix.goos }}
