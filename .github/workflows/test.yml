@@ -37,7 +37,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3.4.0
 
   testmac:
-    runs-on: macos-14 # beta arm runner
+    runs-on: macos-latest # beta arm runner
     strategy:
       matrix:
         goos:
