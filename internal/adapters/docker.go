@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	resty "github.com/go-resty/resty/v2"
 	"github.com/moby/term"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"os"
@@ -140,8 +141,13 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 					case <-quitWriter:
 						return
 					default:
-						if b, err := s.ReadByte(); err == nil {
-							_, _ = stdout.Write([]byte{b})
+						if b, err := s.ReadByte(); err != nil {
+							logrus.Errorf("error reading from Docker: %s", err)
+							return
+						} else {
+							if _, err := stdout.Write([]byte{b}); err != nil {
+								logrus.Errorf("error writing to stdout: %s", err)
+							}
 						}
 					}
 				}
@@ -154,8 +160,14 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 					case <-quitReader:
 						return
 					default:
-						if b, err := s.ReadByte(); err == nil {
-							_, _ = c.Write([]byte{b})
+						if b, err := s.ReadByte(); err != nil {
+							logrus.Errorf("error reading from Docker: %s", err)
+							return
+						} else {
+							if _, err := c.Write([]byte{b}); err != nil {
+								logrus.Errorf("error writing to Docker: %s", err)
+								return
+							}
 						}
 					}
 				}
@@ -169,14 +181,20 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 					case <-quitTermResize:
 						return
 					default:
-						if w, err := term.GetWinsize(fd); err == nil {
+						if w, err := term.GetWinsize(fd); err != nil {
+							logrus.Errorf("error getting terminal size: %s", err)
+							return
+						} else {
 							if w.Width != uint16(width) || w.Height != uint16(height) {
 								width = uint(w.Width)
 								height = uint(w.Height)
-								_ = dockerCli.ContainerExecResize(context.Background(), executeID, types.ResizeOptions{
+								if err := dockerCli.ContainerExecResize(context.Background(), executeID, types.ResizeOptions{
 									Width:  width,
 									Height: height,
-								})
+								}); err != nil {
+									logrus.Errorf("error resizing container terminal: %s", err)
+									return
+								}
 							}
 						}
 					}
