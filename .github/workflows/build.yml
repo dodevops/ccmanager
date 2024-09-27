@@ -42,15 +42,49 @@ jobs:
           asset-name: ccmanager-${{ matrix.goos }}-${{ matrix.goarch }}
           file: ccmanager
 
-  # Separate mac build to support fsevents dependency
-  buildmac:
-    runs-on: macos-14 # beta arm runner
+  # Separate mac amd64 build to support fsevents dependency
+  buildmacamd64:
+    runs-on: macos-13
     strategy:
       matrix:
         goos:
           - darwin
         goarch:
           - amd64
+
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.21"
+
+      - name: Build
+        run: go build -o ccmanager cmd/ccmanager.go
+
+      - name: Release file
+        uses: djnicholson/release-action@v2.10
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-name: ${{ github.event.release.name }}
+          tag-name: ${{ github.event.release.tag_name }}
+          asset-name: ccmanager-${{ matrix.goos }}-${{ matrix.goarch }}
+          file: ccmanager
+
+
+  # Separate mac build to support fsevents dependency
+  buildmacarm64:
+    runs-on: macos-14 # beta arm runner
+    strategy:
+      matrix:
+        goos:
+          - darwin
+        goarch:
           - arm64
 
     env:
