@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	resty "github.com/go-resty/resty/v2"
 	"github.com/moby/term"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"os"
