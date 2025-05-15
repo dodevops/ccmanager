@@ -37,7 +37,7 @@ type DockerAdapter struct {
 }
 
 func (d *DockerAdapter) GetContainerStatus(basePath string, name string) (CloudControlStatus, error) {
-	containerName := fmt.Sprintf("%s_cli_1", name)
+	containerName := fmt.Sprintf("%s%scli%s1", name, api.Separator, api.Separator)
 	c := d.getClient()
 	notFound := regexp.MustCompile("No such container")
 	if i, err := c.ContainerInspect(context.Background(), containerName); err != nil {
@@ -86,7 +86,7 @@ func (d *DockerAdapter) GetContainerStatus(basePath string, name string) (CloudC
 }
 
 func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint, consoleHeight uint) (*ContainerExec, error) {
-	containerName := fmt.Sprintf("%s_cli_1", name)
+	containerName := fmt.Sprintf("%s%scli%s1", name, api.Separator, api.Separator)
 	consoleSize := [2]uint{consoleHeight, consoleWidth}
 	return &ContainerExec{
 		exec: func(stdin io.Reader, stdout io.Writer) error {
@@ -135,18 +135,21 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 			}
 
 			go func(c net.Conn) {
+				active := true
 				s := bufio.NewReader(c)
 				for {
 					select {
 					case <-quitWriter:
 						return
 					default:
-						if b, err := s.ReadByte(); err != nil {
-							logrus.Errorf("error reading from Docker: %s", err)
-							return
-						} else {
-							if _, err := stdout.Write([]byte{b}); err != nil {
-								logrus.Errorf("error writing to stdout: %s", err)
+						if active {
+							if b, err := s.ReadByte(); err != nil {
+								logrus.Errorf("error reading from Docker: %s", err)
+								active = false
+							} else {
+								if _, err := stdout.Write([]byte{b}); err != nil {
+									logrus.Errorf("error writing to stdout: %s", err)
+								}
 							}
 						}
 					}
@@ -154,19 +157,22 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 			}(execResponse.Conn)
 
 			go func(c net.Conn) {
+				active := true
 				s := bufio.NewReader(stdin)
 				for {
 					select {
 					case <-quitReader:
 						return
 					default:
-						if b, err := s.ReadByte(); err != nil {
-							logrus.Errorf("error reading from Docker: %s", err)
-							return
-						} else {
-							if _, err := c.Write([]byte{b}); err != nil {
-								logrus.Errorf("error writing to Docker: %s", err)
-								return
+						if active {
+							if b, err := s.ReadByte(); err != nil {
+								logrus.Errorf("error reading from Docker: %s", err)
+								active = false
+							} else {
+								if _, err := c.Write([]byte{b}); err != nil {
+									logrus.Errorf("error writing to Docker: %s", err)
+									active = false
+								}
 							}
 						}
 					}
@@ -174,6 +180,7 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 			}(execResponse.Conn)
 
 			go func() {
+				active := true
 				width := consoleWidth
 				height := consoleHeight
 				for {
@@ -181,19 +188,21 @@ func (d *DockerAdapter) RunCloudControl(_ string, name string, consoleWidth uint
 					case <-quitTermResize:
 						return
 					default:
-						if w, err := term.GetWinsize(fd); err != nil {
-							logrus.Errorf("error getting terminal size: %s", err)
-							return
-						} else {
-							if w.Width != uint16(width) || w.Height != uint16(height) {
-								width = uint(w.Width)
-								height = uint(w.Height)
-								if err := dockerCli.ContainerExecResize(context.Background(), executeID, types.ResizeOptions{
-									Width:  width,
-									Height: height,
-								}); err != nil {
-									logrus.Errorf("error resizing container terminal: %s", err)
-									return
+						if active {
+							if w, err := term.GetWinsize(fd); err != nil {
+								logrus.Errorf("error getting terminal size: %s", err)
+								active = false
+							} else {
+								if w.Width != uint16(width) || w.Height != uint16(height) {
+									width = uint(w.Width)
+									height = uint(w.Height)
+									if err := dockerCli.ContainerExecResize(context.Background(), executeID, types.ResizeOptions{
+										Width:  width,
+										Height: height,
+									}); err != nil {
+										logrus.Errorf("error resizing container terminal: %s", err)
+										active = false
+									}
 								}
 							}
 						}
@@ -270,8 +279,6 @@ func (d *DockerAdapter) getClient() client.Client {
 func (d *DockerAdapter) getComposeBackend() api.Service {
 	if d.composeBackend == nil {
 		cl := d.getClient()
-		// ensure old docker-compose compatibility
-		api.Separator = "_"
 		if c, err := command.NewDockerCli(command.WithAPIClient(&cl), command.WithDefaultContextStoreConfig()); err != nil {
 			panic(fmt.Sprintf("Can not connect to Docker API: %s", err.Error()))
 		} else {
