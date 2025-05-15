@@ -6,40 +6,24 @@ import (
 	"ccmanager/internal/adapters"
 	"ccmanager/internal/models"
 	"fmt"
-	"github.com/akamensky/argparse"
+	"github.com/alexflint/go-arg"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"log"
 	"os"
-	"strings"
 )
 
 func main() {
-	parser := argparse.NewParser("ccmanager", "CloudControl instance manager")
-	basePath := parser.StringList("b", "basepath", &argparse.Options{
-		Help:     "Paths where to find CloudControl docker compose folders. Can be set using a comma separated list in CCMANAGER_BASEPATH",
-		Required: false,
-	})
-
-	if err := parser.Parse(os.Args); err != nil {
-		log.Fatal(parser.Usage(err))
+	var args struct {
+		BasePath           []string `arg:"required,env:CCMANAGER_BASEPATH,separate" help:"Paths where to find CloudControl docker compose folders"`
+		ContainerSeparator string   `default:"-" arg:"env:CCMANAGER_SEP" help:"Separator used in docker compose container names"`
 	}
-
-	if len(*basePath) == 0 {
-		if e, found := os.LookupEnv("CCMANAGER_BASEPATH"); found {
-			*basePath = strings.Split(e, ",")
-		}
-	}
-
-	if len(*basePath) == 0 {
-		log.Fatal(parser.Usage("No basepath given. Please use CCMANAGER_BASEPATH or the --basepath argument"))
-	}
+	arg.MustParse(&args)
 
 	var items []list.Item
 
 	d := adapters.DockerAdapter{}
 
-	program := tea.NewProgram(models.NewMainModel(&d, *basePath, items))
+	program := tea.NewProgram(models.NewMainModel(&d, args.BasePath, items))
 	if _, err := program.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
