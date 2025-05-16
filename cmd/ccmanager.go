@@ -9,6 +9,7 @@ import (
 	"github.com/alexflint/go-arg"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/docker/compose/v2/pkg/api"
 	"os"
 )
 
@@ -20,6 +21,8 @@ func main() {
 	arg.MustParse(&args)
 
 	var items []list.Item
+
+	api.Separator = args.ContainerSeparator
 
 	d := adapters.DockerAdapter{}
 

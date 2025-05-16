@@ -36,6 +36,14 @@ shortcuts:
 
 You can use `/` to filter the list of instances. For more shortcuts, press `h`.
 
+## Container name separator
+
+CCManager tries to lookup CloudControl environments by the name of their typical containers. These names are
+usually in the form of <project><separator><service><separator><counter>.
+
+The default separator is "-", but may be different in the container engine you're using. You can define the
+separator using the environment variable `CCMANAGER_SEP`.
+
 ## Development
 
 CCmanager is based on [Go](https://go.dev), 
